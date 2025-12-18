@@ -1,6 +1,7 @@
 package models;
 
 public abstract class User {
+
     protected int id;
     protected String username;
     protected String password;
@@ -13,27 +14,26 @@ public abstract class User {
         this.fullName = fullName;
     }
 
-    // Abstract method: Logic login tiap user mungkin beda
     public abstract boolean login(String username, String password);
 
     public void logout() {
-        System.out.println("Logout berhasil.");
-    }
-    
-    // Getter & Setter (Rheival wajib generate ini)
-    public int getId() { 
-        return id; 
+        System.out.println("User " + this.username + " logout.");
     }
 
-    public String getUsername() { 
-        return username; 
+    public int getId() {
+        return id;
     }
 
-    public String getPassword() { 
-        return password; 
+    public String getUsername() {
+        return username;
     }
-    
-    public String getFullName() { 
-        return fullName; 
+
+    public String getFullName() {
+        return fullName;
     }
+
+    public String getPassword() {
+        return password;
+    }
+
 }
