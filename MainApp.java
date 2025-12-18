@@ -17,7 +17,7 @@ public class MainApp {
         int choice;
         do {
             System.out.println("\n==================================");
-            System.out.println("   💸 E-WALLET CHEVALIER SYSTEM   ");
+            System.out.println("   💸 ZAR WALLET   ");
             System.out.println("==================================");
             System.out.println("1. Login Customer");
             System.out.println("2. Login Admin");
@@ -42,12 +42,12 @@ public class MainApp {
                     handleRegisterFlow();
                     break;
                 case 4:
-                System.out.println("Terima kasih sudah menggunakan E-Wallet Chevalier!");
+                    System.out.println("Terima kasih sudah menggunakan ZAR WALLET!");
                     break;
                 default:
                     System.out.println("Input salah, Bro!");
             }
-        } while (choice != 3);
+        } while (choice != 4);
     }
 
     // ==========================================
@@ -83,11 +83,11 @@ public class MainApp {
             System.out.println("Saldo  : Rp " + String.format("%,.0f", cust.getWallet().checkBalance())); // Format
                                                                                                           // Rupiah
             System.out.println("----------------------------");
-            System.out.println("1. 📤 Transfer Saldo");
-            System.out.println("2. 🛒 Beli Produk (Pulsa/Token)");
-            System.out.println("3. ➕ Top Up Saldo");
-            System.out.println("4. 📜 Cek Profile & PIN");
-            System.out.println("5. 🚪 Logout");
+            System.out.println("1. Transfer Saldo");
+            System.out.println("2. Beli Produk (Pulsa/Token)");
+            System.out.println("3. Top Up Saldo");
+            System.out.println("4. Cek Profile & PIN");
+            System.out.println("5. Logout");
             System.out.print(">> Mau ngapain: ");
 
             String menu = scanner.nextLine();
@@ -132,17 +132,17 @@ public class MainApp {
             String pin = scanner.nextLine();
 
             if (!cust.getWallet().validatePin(pin)) { // Sementara return true
-                System.out.println("❌ PIN Salah!");
+                System.out.println("PIN Salah!");
                 return;
             }
 
             // Eksekusi Transfer
             boolean success = walletService.transfer(cust, targetId, amount);
             if (success) {
-                System.out.println("✅ Transfer BERHASIL!");
+                System.out.println("Transfer BERHASIL!");
             }
         } catch (NumberFormatException e) {
-            System.out.println("❌ Input harus angka!");
+            System.out.println("Input harus angka!");
         }
     }
 
@@ -155,6 +155,11 @@ public class MainApp {
         for (Product p : products) {
             System.out.printf("[%d] %s - Harga: Rp %,.0f (Stok: %d)\n",
                     p.getProductId(), p.getProductName(), p.getPrice(), p.getStock());
+        }
+
+        if (cust == null) {
+            System.out.println("---------------------------");
+            return;
         }
 
         System.out.print("Pilih ID Produk: ");
@@ -171,17 +176,17 @@ public class MainApp {
             }
 
             if (selectedProduct != null) {
-                // Logic Bayar (Kurangi saldo & Kurangi stok)
-                // Disini kita pake method buyProduct() di Customer sesuai diagram
-                cust.buyProduct(selectedProduct);
+                // Logic Bayar (Kurangi saldo & Kurangi stok) via Service yang support
+                // Transaction
+                walletService.buyProduct(cust, selectedProduct);
 
                 // Note: Logic update stok di DB harusnya dipanggil di dalam method buyProduct
                 // Tapi untuk simulasi console, ini cukup.
             } else {
-                System.out.println("❌ Produk tidak ditemukan.");
+                System.out.println("Produk tidak ditemukan.");
             }
         } catch (NumberFormatException e) {
-            System.out.println("❌ Input error.");
+            System.out.println("Input error.");
         }
     }
 
@@ -192,12 +197,12 @@ public class MainApp {
             double amount = Double.parseDouble(scanner.nextLine());
             boolean success = walletService.topUp(cust, amount);
             if (success) {
-                System.out.println("✅ Top Up Berhasil! Saldo bertambah.");
+                System.out.println("Top Up Berhasil! Saldo bertambah.");
             } else {
-                System.out.println("❌ Top Up Gagal.");
+                System.out.println("Top Up Gagal.");
             }
         } catch (Exception e) {
-            System.out.println("❌ Input angka aja.");
+            System.out.println("Input angka aja.");
         }
     }
 
@@ -210,25 +215,34 @@ public class MainApp {
         String code = scanner.nextLine();
 
         if (code.equals("ADM001")) { // Sesuai Dummy Data
-            System.out.println("\n--- 🛠 MENU ADMIN ---");
-            System.out.println("1. Lihat Semua Produk");
-            System.out.println("2. Restock Produk");
-            System.out.println("3. Back");
-            System.out.print(">> Pilih: ");
-            String admMenu = scanner.nextLine();
+            boolean isAdmin = true;
+            while (isAdmin) {
+                System.out.println("\n--- 🛠 MENU ADMIN ---");
+                System.out.println("1. Lihat Semua Produk");
+                System.out.println("2. Restock Produk");
+                System.out.println("3. Back");
+                System.out.print(">> Pilih: ");
+                String admMenu = scanner.nextLine();
 
-            if (admMenu.equals("1")) {
-                handleBuyProduct(null); // Reuse method nampilin produk (hack dikit)
-            } else if (admMenu.equals("2")) {
-                System.out.print("ID Produk: ");
-                int pid = Integer.parseInt(scanner.nextLine());
-                System.out.print("Stok Baru: ");
-                int stock = Integer.parseInt(scanner.nextLine());
-                productService.updateProductStock(pid, stock);
-                System.out.println("✅ Stok Updated!");
+                if (admMenu.equals("1")) {
+                    handleBuyProduct(null); // Reuse method nampilin produk (hack dikit)
+                } else if (admMenu.equals("2")) {
+                    System.out.print("ID Produk: ");
+                    try {
+                        int pid = Integer.parseInt(scanner.nextLine());
+                        System.out.print("Tambah Stok: ");
+                        int stock = Integer.parseInt(scanner.nextLine());
+                        productService.addStock(pid, stock);
+                        System.out.println("Stok Updated!");
+                    } catch (NumberFormatException e) {
+                        System.out.println("Input angka aja bro!");
+                    }
+                } else if (admMenu.equals("3")) {
+                    isAdmin = false;
+                }
             }
         } else {
-            System.out.println("❌ Kode Admin Salah!");
+            System.out.println("Kode Admin Salah!");
         }
     }
 
@@ -236,7 +250,7 @@ public class MainApp {
     // FLOW REGISTRASI (Form Input)
     // ==========================================
     private static void handleRegisterFlow() {
-        System.out.println("\n--- 📝 FORM REGISTRASI ---");
+        System.out.println("\n--- FORM REGISTRASI ---");
 
         // Input Data
         System.out.print("Username (Unik): ");
@@ -256,7 +270,7 @@ public class MainApp {
 
         // Validasi simpel sebelum kirim ke database
         if (pin.length() != 6) {
-            System.out.println("❌ Gagal: PIN harus 6 digit angka!");
+            System.out.println("Gagal: PIN harus 6 digit angka!");
             return;
         }
 
@@ -265,9 +279,9 @@ public class MainApp {
         boolean success = authService.registerCustomer(uname, pass, fname, phone, pin);
 
         if (success) {
-            System.out.println("✅ Akun berhasil dibuat! Silakan Login.");
+            System.out.println("Akun berhasil dibuat! Silakan Login.");
         } else {
-            System.out.println("❌ Registrasi Gagal! Username atau No HP mungkin sudah dipakai.");
+            System.out.println("Registrasi Gagal! Username atau No HP mungkin sudah dipakai.");
         }
     }
 }

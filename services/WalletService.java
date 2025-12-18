@@ -31,7 +31,7 @@ public class WalletService {
 
             conn.commit(); // SAVE
             // Update saldo di object Java biar realtime
-            cust.getWallet().topUp(amount); 
+            cust.getWallet().topUp(amount);
             return true;
 
         } catch (Exception e) {
@@ -67,7 +67,8 @@ public class WalletService {
                 stmt.setDouble(1, amount);
                 stmt.setInt(2, targetCustId);
                 int row = stmt.executeUpdate();
-                if (row == 0) throw new SQLException("ID Penerima Salah!"); // Batalin kalau user gak ada
+                if (row == 0)
+                    throw new SQLException("ID Penerima Salah!"); // Batalin kalau user gak ada
             }
 
             // D. Catat History Transfer
@@ -80,22 +81,98 @@ public class WalletService {
             }
 
             conn.commit(); // SEMUA SUKSES -> SAVE PERMANEN
-            
+
             // Update saldo di object Java sender biar sinkron
             sender.getWallet().processPayment(amount);
             return true;
 
         } catch (Exception e) {
-            try { if (conn != null) conn.rollback(); } catch (Exception ex) {} // BALIKIN SALDO KALAU ERROR
+            try {
+                if (conn != null)
+                    conn.rollback();
+            } catch (Exception ex) {
+            } // BALIKIN SALDO KALAU ERROR
             System.err.println("Transfer Gagal: " + e.getMessage());
             return false;
         }
     }
-    
+
     // FITUR 3: BELI PRODUK (Logic Pembayaran)
     public boolean buyProduct(Customer cust, Product product) {
-        // Logic mirip Transfer, tapi targetnya bukan user lain, melainkan stok barang berkurang
-        // Lo bisa kembangin ini buat 'Extra Miles' nanti
-        return true; 
+        Connection conn = null;
+        try {
+            conn = DatabaseHelper.getConnection();
+            conn.setAutoCommit(false); // START TRANSACTION
+
+            // 1. Validasi Saldo
+            if (cust.getWallet().checkBalance() < product.getPrice()) {
+                System.out.println("Saldo tidak cukup!");
+                return false;
+            }
+
+            // 2. Validasi Stok (Ambil real-time dari DB biar aman)
+            String checkStockSql = "SELECT stock FROM product WHERE product_id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(checkStockSql)) {
+                stmt.setInt(1, product.getProductId());
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    int currentStock = rs.getInt("stock");
+                    if (currentStock <= 0) {
+                        System.out.println("Stok habis!");
+                        return false;
+                    }
+                } else {
+                    return false; // Produk ga ada
+                }
+            }
+
+            // 3. Kurangi Saldo User
+            String sqlDebit = "UPDATE wallet SET balance = balance - ? WHERE customer_id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlDebit)) {
+                stmt.setDouble(1, product.getPrice());
+                stmt.setInt(2, cust.getId());
+                stmt.executeUpdate();
+            }
+
+            // 4. Kurangi Stok Produk
+            String sqlStock = "UPDATE product SET stock = stock - 1 WHERE product_id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlStock)) {
+                stmt.setInt(1, product.getProductId());
+                stmt.executeUpdate();
+            }
+
+            // 5. Catat Transaksi
+            String sqlLog = "INSERT INTO transaction (customer_id, product_id, transaction_type, amount) VALUES (?, ?, 'PAYMENT', ?)";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlLog)) {
+                stmt.setInt(1, cust.getId());
+                stmt.setInt(2, product.getProductId());
+                stmt.setDouble(3, product.getPrice());
+                stmt.executeUpdate();
+            }
+
+            conn.commit(); // SAVE PERMANEN
+
+            // Update Object Java Biar Sinkron
+            cust.getWallet().processPayment(product.getPrice());
+            product.setStock(product.getStock() - 1);
+
+            System.out.println("Pembelian Berhasil!");
+            return true;
+
+        } catch (Exception e) {
+            try {
+                if (conn != null)
+                    conn.rollback();
+            } catch (SQLException ex) {
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+            }
+        }
     }
 }

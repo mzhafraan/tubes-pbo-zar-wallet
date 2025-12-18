@@ -16,13 +16,15 @@ public class DatabaseHelper {
         try {
             // Load Driver (Opsional di Java baru, tapi bagus buat legacy)
             Class.forName("com.mysql.cj.jdbc.Driver");
-            
+
             // Buka Jembatan
             conn = DriverManager.getConnection(URL, USER, PASS);
-            // System.out.println("Koneksi ke Database Berhasil! 🔥"); // Un-comment buat testing
-            
+            // System.out.println("Koneksi ke Database Berhasil! 🔥"); // Un-comment buat
+            // testing
+
         } catch (ClassNotFoundException | SQLException e) {
             System.err.println("Gagal Konek Database: " + e.getMessage());
+            throw new RuntimeException("Gagal menghubungkan ke database: " + e.getMessage(), e);
         }
         return conn;
     }
