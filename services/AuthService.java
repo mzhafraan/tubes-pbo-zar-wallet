@@ -1,8 +1,8 @@
 package services;
 
 import infrastructure.DatabaseHelper;
-import models.*;
 import java.sql.*;
+import models.*;
 
 public class AuthService {
 
@@ -39,6 +39,57 @@ public class AuthService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    // === TAMBAHAN FITUR REGISTER ===
+    public boolean registerCustomer(String username, String password, String fullName, String phone, String pin) {
+        Connection conn = null;
+        String sqlCust = "INSERT INTO customer (username, password, full_name, phone_number, pin) VALUES (?, ?, ?, ?, ?)";
+        String sqlWallet = "INSERT INTO wallet (customer_id, balance) VALUES (?, 0)"; // Saldo awal 0
+
+        try {
+            conn = DatabaseHelper.getConnection();
+            conn.setAutoCommit(false); // START TRANSACTION
+
+            // 1. Insert ke Tabel Customer
+            int newCustomerId = -1;
+            try (PreparedStatement stmt = conn.prepareStatement(sqlCust, Statement.RETURN_GENERATED_KEYS)) {
+                stmt.setString(1, username);
+                stmt.setString(2, password);
+                stmt.setString(3, fullName);
+                stmt.setString(4, phone);
+                stmt.setString(5, pin);
+                int affectedRows = stmt.executeUpdate();
+
+                if (affectedRows == 0) throw new SQLException("Gagal membuat user.");
+
+                // Ambil ID Customer yang baru aja dibuat (Auto Increment)
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        newCustomerId = generatedKeys.getInt(1);
+                    } else {
+                        throw new SQLException("Gagal mengambil ID Customer.");
+                    }
+                }
+            }
+
+            // 2. Otomatis Buatin Wallet
+            try (PreparedStatement stmt = conn.prepareStatement(sqlWallet)) {
+                stmt.setInt(1, newCustomerId);
+                stmt.executeUpdate();
+            }
+
+            conn.commit(); // SAVE SEMUA
+            System.out.println("Register Berhasil! ID Kamu: " + newCustomerId);
+            return true;
+
+        } catch (Exception e) {
+            try { if (conn != null) conn.rollback(); } catch (SQLException ex) {} // BATALIN KALAU ERROR
+            System.err.println("Register Gagal: " + e.getMessage()); // Biasanya error karena username/no hp udah ada
+            return false;
+        } finally {
+            try { if (conn != null) conn.close(); } catch (SQLException ex) {}
+        }
     }
 
     // Helper: Ambil data wallet berdasarkan ID Customer

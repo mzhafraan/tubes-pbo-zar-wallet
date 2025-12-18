@@ -1,7 +1,7 @@
-import models.*;
-import services.*;
 import java.util.List;
 import java.util.Scanner;
+import models.*;
+import services.*;
 
 public class MainApp {
     // 1. Inisialisasi Service & Scanner
@@ -9,9 +9,9 @@ public class MainApp {
     private static AuthService authService = new AuthService();
     private static WalletService walletService = new WalletService();
     private static ProductService productService = new ProductService();
-    
+
     // Simpan data user yang lagi login
-    private static User currentUser = null; 
+    private static User currentUser = null;
 
     public static void main(String[] args) {
         int choice;
@@ -21,9 +21,10 @@ public class MainApp {
             System.out.println("==================================");
             System.out.println("1. Login Customer");
             System.out.println("2. Login Admin");
-            System.out.println("3. Exit");
+            System.out.println("3. Register");
+            System.out.println("4. Exit");
             System.out.print(">> Pilih Menu: ");
-            
+
             try {
                 choice = Integer.parseInt(scanner.nextLine());
             } catch (NumberFormatException e) {
@@ -38,7 +39,10 @@ public class MainApp {
                     loginAdminFlow(); // Simpel aja buat admin
                     break;
                 case 3:
-                    System.out.println("Thank you! Bye bye...");
+                    handleRegisterFlow();
+                    break;
+                case 4:
+                System.out.println("Terima kasih sudah menggunakan E-Wallet Chevalier!");
                     break;
                 default:
                     System.out.println("Input salah, Bro!");
@@ -76,7 +80,8 @@ public class MainApp {
             // Tampilan Header Saldo Realtime
             System.out.println("\n--- 👤 DASHBOARD NASABAH ---");
             System.out.println("Nama   : " + cust.getFullName());
-            System.out.println("Saldo  : Rp " + String.format("%,.0f", cust.getWallet().checkBalance())); // Format Rupiah
+            System.out.println("Saldo  : Rp " + String.format("%,.0f", cust.getWallet().checkBalance())); // Format
+                                                                                                          // Rupiah
             System.out.println("----------------------------");
             System.out.println("1. 📤 Transfer Saldo");
             System.out.println("2. 🛒 Beli Produk (Pulsa/Token)");
@@ -113,7 +118,7 @@ public class MainApp {
     // ==========================================
     // LOGIC FITUR (Handling Input)
     // ==========================================
-    
+
     // Fitur Transfer (Panggil Logic Zhafran)
     private static void handleTransfer(Customer cust) {
         System.out.print("\nMasukkan ID Tujuan (Cth: 2): ");
@@ -125,7 +130,7 @@ public class MainApp {
             // Validasi PIN dulu (Sesuai Diagram)
             System.out.print("Masukkan PIN Kamu: ");
             String pin = scanner.nextLine();
-            
+
             if (!cust.getWallet().validatePin(pin)) { // Sementara return true
                 System.out.println("❌ PIN Salah!");
                 return;
@@ -145,17 +150,17 @@ public class MainApp {
     private static void handleBuyProduct(Customer cust) {
         System.out.println("\n=== DAFTAR PRODUK ===");
         List<Product> products = productService.getAllProducts();
-        
+
         // Looping Nampilin Produk
         for (Product p : products) {
-            System.out.printf("[%d] %s - Harga: Rp %,.0f (Stok: %d)\n", 
-                p.getProductId(), p.getProductName(), p.getPrice(), p.getStock());
+            System.out.printf("[%d] %s - Harga: Rp %,.0f (Stok: %d)\n",
+                    p.getProductId(), p.getProductName(), p.getPrice(), p.getStock());
         }
 
         System.out.print("Pilih ID Produk: ");
         try {
             int pId = Integer.parseInt(scanner.nextLine());
-            
+
             // Cari produk di list (Simpel search)
             Product selectedProduct = null;
             for (Product p : products) {
@@ -168,8 +173,8 @@ public class MainApp {
             if (selectedProduct != null) {
                 // Logic Bayar (Kurangi saldo & Kurangi stok)
                 // Disini kita pake method buyProduct() di Customer sesuai diagram
-                cust.buyProduct(selectedProduct); 
-                
+                cust.buyProduct(selectedProduct);
+
                 // Note: Logic update stok di DB harusnya dipanggil di dalam method buyProduct
                 // Tapi untuk simulasi console, ini cukup.
             } else {
@@ -203,7 +208,7 @@ public class MainApp {
         // Hardcode dulu atau bikin AuthService.loginAdmin()
         System.out.print("Admin Code: ");
         String code = scanner.nextLine();
-        
+
         if (code.equals("ADM001")) { // Sesuai Dummy Data
             System.out.println("\n--- 🛠 MENU ADMIN ---");
             System.out.println("1. Lihat Semua Produk");
@@ -211,7 +216,7 @@ public class MainApp {
             System.out.println("3. Back");
             System.out.print(">> Pilih: ");
             String admMenu = scanner.nextLine();
-            
+
             if (admMenu.equals("1")) {
                 handleBuyProduct(null); // Reuse method nampilin produk (hack dikit)
             } else if (admMenu.equals("2")) {
@@ -224,6 +229,45 @@ public class MainApp {
             }
         } else {
             System.out.println("❌ Kode Admin Salah!");
+        }
+    }
+
+    // ==========================================
+    // FLOW REGISTRASI (Form Input)
+    // ==========================================
+    private static void handleRegisterFlow() {
+        System.out.println("\n--- 📝 FORM REGISTRASI ---");
+
+        // Input Data
+        System.out.print("Username (Unik): ");
+        String uname = scanner.nextLine();
+
+        System.out.print("Password: ");
+        String pass = scanner.nextLine();
+
+        System.out.print("Nama Lengkap: ");
+        String fname = scanner.nextLine();
+
+        System.out.print("No HP (08xx): ");
+        String phone = scanner.nextLine();
+
+        System.out.print("Buat PIN (6 Angka): ");
+        String pin = scanner.nextLine();
+
+        // Validasi simpel sebelum kirim ke database
+        if (pin.length() != 6) {
+            System.out.println("❌ Gagal: PIN harus 6 digit angka!");
+            return;
+        }
+
+        // Panggil Logic AuthService
+        System.out.println("Sedang memproses...");
+        boolean success = authService.registerCustomer(uname, pass, fname, phone, pin);
+
+        if (success) {
+            System.out.println("✅ Akun berhasil dibuat! Silakan Login.");
+        } else {
+            System.out.println("❌ Registrasi Gagal! Username atau No HP mungkin sudah dipakai.");
         }
     }
 }
