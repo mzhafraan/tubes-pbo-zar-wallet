@@ -7,30 +7,31 @@ import java.sql.*;
 
 public class WalletService {
 
-    // FITUR 1: TOP UP
+    // FITUR 1: TOP UP SALDO
     public boolean topUp(Customer cust, double amount) {
         String sqlUpdate = "UPDATE wallet SET balance = balance + ? WHERE customer_id = ?";
         String sqlLog = "INSERT INTO transaction (customer_id, transaction_type, amount) VALUES (?, 'TOPUP', ?)";
 
         try (Connection conn = DatabaseHelper.getConnection()) {
-            conn.setAutoCommit(false); // START TRANSACTION
+            conn.setAutoCommit(false); // MULAI TRANSAKSI (Biar aman)
 
-            // 1. Update Saldo
+            // 1. Update Saldo di Database
             try (PreparedStatement stmt = conn.prepareStatement(sqlUpdate)) {
                 stmt.setDouble(1, amount);
                 stmt.setInt(2, cust.getId());
                 stmt.executeUpdate();
             }
 
-            // 2. Catat History
+            // 2. Catat Riwayat Transaksi
             try (PreparedStatement stmt = conn.prepareStatement(sqlLog)) {
                 stmt.setInt(1, cust.getId());
                 stmt.setDouble(2, amount);
                 stmt.executeUpdate();
             }
 
-            conn.commit(); // SAVE
-            // Update saldo di object Java biar realtime
+            conn.commit(); // SIMPAN PERMANEN
+
+            // Update juga saldo di aplikasi biar langsung berubah
             cust.getWallet().topUp(amount);
             return true;
 
@@ -40,20 +41,20 @@ public class WalletService {
         }
     }
 
-    // FITUR 2: TRANSFER (Logic Paling Rumit)
+    // FITUR 2: TRANSFER SALDO (Antar User)
     public boolean transfer(Customer sender, int targetCustId, double amount) {
         Connection conn = null;
         try {
             conn = DatabaseHelper.getConnection();
             conn.setAutoCommit(false); // MATIKAN AUTO SAVE
 
-            // A. Validasi Saldo
+            // 1. Cek Saldo Pengirim Cukup Gak?
             if (sender.getWallet().checkBalance() < amount) {
-                System.out.println("Saldo tidak cukup!");
+                System.out.println("❌ Saldo tidak cukup!");
                 return false;
             }
 
-            // B. Kurangi Saldo Pengirim
+            // 2. Kurangi Saldo Pengirim
             String sqlDebit = "UPDATE wallet SET balance = balance - ? WHERE customer_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sqlDebit)) {
                 stmt.setDouble(1, amount);
@@ -61,17 +62,21 @@ public class WalletService {
                 stmt.executeUpdate();
             }
 
-            // C. Tambah Saldo Penerima
+            // 3. Tambah Saldo Penerima
             String sqlCredit = "UPDATE wallet SET balance = balance + ? WHERE customer_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sqlCredit)) {
                 stmt.setDouble(1, amount);
                 stmt.setInt(2, targetCustId);
                 int row = stmt.executeUpdate();
-                if (row == 0)
-                    throw new SQLException("ID Penerima Salah!"); // Batalin kalau user gak ada
+
+                // Kalau row 0 artinya ID Penerima gak ketemu
+                if (row == 0) {
+                    System.out.println("❌ ID Penerima tidak ditemukan!");
+                    throw new SQLException("User not found");
+                }
             }
 
-            // D. Catat History Transfer
+            // 4. Catat Transaksi (TRANSFER)
             String sqlLog = "INSERT INTO transaction (customer_id, target_customer_id, transaction_type, amount) VALUES (?, ?, 'TRANSFER', ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sqlLog)) {
                 stmt.setInt(1, sender.getId());
@@ -80,45 +85,50 @@ public class WalletService {
                 stmt.executeUpdate();
             }
 
-            conn.commit(); // SEMUA SUKSES -> SAVE PERMANEN
+            conn.commit(); // SAVE SEMUA PROSES
 
-            // Update saldo di object Java sender biar sinkron
+            // Update saldo di memori Java
             sender.getWallet().processPayment(amount);
             return true;
 
         } catch (Exception e) {
+            // Kalau ada error, batalkan semua perubahan (Rollback)
             try {
                 if (conn != null)
                     conn.rollback();
             } catch (Exception ex) {
-            } // BALIKIN SALDO KALAU ERROR
-            System.err.println("Transfer Gagal: " + e.getMessage());
+            }
             return false;
+        } finally {
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (Exception ex) {
+            }
         }
     }
 
-    // FITUR 3: BELI PRODUK (Logic Pembayaran)
+    // FITUR 3: BELI PRODUK (Pulsa/Token/Dll)
     public boolean buyProduct(Customer cust, Product product) {
         Connection conn = null;
         try {
             conn = DatabaseHelper.getConnection();
             conn.setAutoCommit(false); // START TRANSACTION
 
-            // 1. Validasi Saldo
+            // 1. Cek Saldo User
             if (cust.getWallet().checkBalance() < product.getPrice()) {
-                System.out.println("Saldo tidak cukup!");
+                System.out.println("❌ Saldo tidak cukup!");
                 return false;
             }
 
-            // 2. Validasi Stok (Ambil real-time dari DB biar aman)
+            // 2. Cek Stok Produk
             String checkStockSql = "SELECT stock FROM product WHERE product_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(checkStockSql)) {
                 stmt.setInt(1, product.getProductId());
                 ResultSet rs = stmt.executeQuery();
                 if (rs.next()) {
-                    int currentStock = rs.getInt("stock");
-                    if (currentStock <= 0) {
-                        System.out.println("Stok habis!");
+                    if (rs.getInt("stock") <= 0) {
+                        System.out.println("❌ Stok Habis!");
                         return false;
                     }
                 } else {
@@ -126,7 +136,7 @@ public class WalletService {
                 }
             }
 
-            // 3. Kurangi Saldo User
+            // 3. Potong Saldo User
             String sqlDebit = "UPDATE wallet SET balance = balance - ? WHERE customer_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sqlDebit)) {
                 stmt.setDouble(1, product.getPrice());
@@ -141,7 +151,7 @@ public class WalletService {
                 stmt.executeUpdate();
             }
 
-            // 5. Catat Transaksi
+            // 5. Catat Transaksi (PAYMENT)
             String sqlLog = "INSERT INTO transaction (customer_id, product_id, transaction_type, amount) VALUES (?, ?, 'PAYMENT', ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sqlLog)) {
                 stmt.setInt(1, cust.getId());
@@ -150,13 +160,13 @@ public class WalletService {
                 stmt.executeUpdate();
             }
 
-            conn.commit(); // SAVE PERMANEN
+            conn.commit(); // Sukses! Simpan permanen
 
-            // Update Object Java Biar Sinkron
+            // Update data di aplikasi
             cust.getWallet().processPayment(product.getPrice());
             product.setStock(product.getStock() - 1);
 
-            System.out.println("Pembelian Berhasil!");
+            System.out.println("✅ Pembelian Berhasil!");
             return true;
 
         } catch (Exception e) {
@@ -174,5 +184,74 @@ public class WalletService {
             } catch (SQLException ex) {
             }
         }
+    }
+
+    // FITUR 4: CEK HISTORY TRANSAKSI
+    public java.util.List<models.Transaction> getTransactionHistory(int customerId) {
+        java.util.List<models.Transaction> history = new java.util.ArrayList<>();
+        String sql = "SELECT * FROM transaction WHERE customer_id = ? OR target_customer_id = ? ORDER BY timestamp DESC";
+
+        try (Connection conn = DatabaseHelper.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, customerId);
+            stmt.setInt(2, customerId);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                int id = rs.getInt("transaction_id");
+                int custId = rs.getInt("customer_id");
+                String typeStr = rs.getString("transaction_type");
+                double amount = rs.getDouble("amount");
+                Timestamp time = rs.getTimestamp("timestamp");
+
+                // Konversi String ke Enum (ERROR HANDLING if null)
+                models.Transaction.TransactionType type = models.Transaction.TransactionType.valueOf(typeStr);
+
+                models.Transaction trx = new models.Transaction(id, custId, type, amount);
+                // Set data tambahan manual karena constructor terbatas
+                // Note: Idealnya constructor Transaction diupdate, tapi ini cara cepat
+
+                history.add(trx);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return history;
+    }
+
+    // FITUR ADMIN: LIHAT SEMUA TRANSAKSI
+    public java.util.List<models.Transaction> getAllTransactions() {
+        java.util.List<models.Transaction> history = new java.util.ArrayList<>();
+        String sql = "SELECT * FROM transaction ORDER BY timestamp DESC";
+
+        try (Connection conn = DatabaseHelper.getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                int id = rs.getInt("transaction_id");
+                int custId = rs.getInt("customer_id");
+                String typeStr = rs.getString("transaction_type");
+                double amount = rs.getDouble("amount");
+
+                // Optional: Ambil target customer buat info
+                int targetId = rs.getInt("target_customer_id");
+
+                models.Transaction.TransactionType type = models.Transaction.TransactionType.valueOf(typeStr);
+                models.Transaction trx = new models.Transaction(id, custId, type, amount);
+
+                // Set manual fields yang gak ada di constructor
+                // Asumsi Transaction punya method setTargetCustomerId
+                // Kalau gak ada, kita biarin aja standard logic
+
+                history.add(trx);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return history;
     }
 }

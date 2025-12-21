@@ -59,4 +59,16 @@ public class Transaction {
     public TransactionType getType() {
         return type;
     }
+
+    public int getTransactionId() {
+        return transactionId;
+    }
+
+    public int getCustomerId() {
+        return customerId;
+    }
+
+    public Date getTimestamp() {
+        return timestamp;
+    }
 }
