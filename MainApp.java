@@ -17,7 +17,7 @@ public class MainApp {
         int choice;
         do {
             System.out.println("\n==================================");
-            System.out.println("   💸 ZAR WALLET APPLICATION      ");
+            System.out.println("   ZAR WALLET APPLICATION      ");
             System.out.println("==================================");
             System.out.println("1. Login Customer");
             System.out.println("2. Login Admin");
@@ -45,7 +45,7 @@ public class MainApp {
                     System.out.println("Terima kasih sudah menggunakan ZAR WALLET!");
                     break;
                 default:
-                    System.out.println("❌ Pilihan tidak valid, coba lagi!");
+                    System.out.println("Pilihan tidak valid, coba lagi!");
             }
         } while (choice != 4);
     }
@@ -54,7 +54,7 @@ public class MainApp {
     // FLOW 1: LOGIN CUSTOMER
     // ==========================================
     private static void loginCustomerFlow() {
-        System.out.println("\n--- 🔐 LOGIN CUSTOMER ---");
+        System.out.println("\n--- LOGIN CUSTOMER ---");
         System.out.print("Username: ");
         String username = scanner.nextLine();
         System.out.print("Password: ");
@@ -65,10 +65,10 @@ public class MainApp {
 
         if (customer != null) {
             currentUser = customer;
-            System.out.println("✅ Login Sukses! Selamat Datang, " + customer.getFullName());
+            System.out.println("Login Sukses! Selamat Datang, " + customer.getFullName());
             showCustomerMenu((Customer) currentUser);
         } else {
-            System.out.println("❌ Login Gagal! Cek username atau password.");
+            System.out.println("Login Gagal! Cek username atau password.");
         }
     }
 
@@ -107,10 +107,10 @@ public class MainApp {
                 case "5":
                     isRunning = false;
                     currentUser = null;
-                    System.out.println("👋 Dadah, sampai jumpa lagi!");
+                    System.out.println("Dadah, sampai jumpa lagi!");
                     break;
                 default:
-                    System.out.println("❌ Pilih angka 1-5 aja.");
+                    System.out.println("Pilih angka 1-5 aja.");
             }
         }
     }
@@ -121,24 +121,16 @@ public class MainApp {
 
     // 4. Cek History
     private static void handleCheckHistory(Customer cust) {
-        System.out.println("\n--- 📜 RIWAYAT TRANSAKSI ---");
+        System.out.println("\n--- RIWAYAT TRANSAKSI ---");
         List<Transaction> history = walletService.getTransactionHistory(cust.getId());
 
         if (history.isEmpty()) {
             System.out.println("Belum ada transaksi.");
         } else {
             for (Transaction trx : history) {
-                // Determine icon based on type
-                String icon = "📄";
-                if (trx.getType() == Transaction.TransactionType.TOPUP)
-                    icon = "➕";
-                else if (trx.getType() == Transaction.TransactionType.TRANSFER)
-                    icon = "💸";
-                else if (trx.getType() == Transaction.TransactionType.PAYMENT)
-                    icon = "🛒";
-
-                System.out.printf("%s [%s] - Rp %,.0f\n",
-                        icon, trx.getType(), trx.getAmount());
+                // Langsung tampilkan Tipe dan Nominal tanpa icon
+                System.out.printf("[%s] - Rp %,.0f\n",
+                        trx.getType(), trx.getAmount());
             }
         }
         System.out.println("----------------------------");
@@ -164,23 +156,23 @@ public class MainApp {
 
             // Cek PIN (Harusnya cek ke DB, tapi sementara simple check di model wallet)
             if (!cust.getWallet().validatePin(pin)) {
-                System.out.println("❌ PIN Salah!");
+                System.out.println("PIN Salah!");
                 return;
             }
 
             // Panggil Service Wallet untuk proses transaksi
             boolean success = walletService.transfer(cust, targetId, amount);
             if (success) {
-                System.out.println("✅ Transfer BERHASIL dikirim!");
+                System.out.println("Transfer BERHASIL dikirim!");
             }
         } catch (NumberFormatException e) {
-            System.out.println("❌ Input harus angka!");
+            System.out.println("Input harus angka!");
         }
     }
 
     // 2. Beli Produk
     private static void handleBuyProduct(Customer cust) {
-        System.out.println("\n=== 🛒 DAFTAR PRODUK ===");
+        System.out.println("\n=== DAFTAR PRODUK ===");
         List<Product> products = productService.getAllProducts();
 
         // Tampilkan semua produk
@@ -217,34 +209,34 @@ public class MainApp {
                     // Proses pembelian via Service
                     walletService.buyProduct(cust, selectedProduct);
                 } else {
-                    System.out.println("❌ PIN Salah! Transaksi Dibatalkan.");
+                    System.out.println("PIN Salah! Transaksi Dibatalkan.");
                 }
             } else {
-                System.out.println("❌ Produk tidak ditemukan.");
+                System.out.println("Produk tidak ditemukan.");
             }
         } catch (NumberFormatException e) {
-            System.out.println("❌ Input error, masukkan angka ID.");
+            System.out.println("Input error, masukkan angka ID.");
         }
     }
 
     // 3. Top Up
     private static void handleTopUp(Customer cust) {
-        System.out.println("\n--- ➕ TOP UP SALDO ---");
+        System.out.println("\n--- TOP UP SALDO ---");
         System.out.print("Mau Top Up berapa: Rp ");
         try {
             double amount = Double.parseDouble(scanner.nextLine());
             if (amount <= 0) {
-                System.out.println("❌ Nominal harus positif!");
+                System.out.println("Nominal harus positif!");
                 return;
             }
             boolean success = walletService.topUp(cust, amount);
             if (success) {
-                System.out.println("✅ Top Up Berhasil! Saldo bertambah.");
+                System.out.println("Top Up Berhasil! Saldo bertambah.");
             } else {
-                System.out.println("❌ Top Up Gagal.");
+                System.out.println("Top Up Gagal.");
             }
         } catch (Exception e) {
-            System.out.println("❌ Input angka aja.");
+            System.out.println("Input angka aja.");
         }
     }
 
@@ -252,7 +244,7 @@ public class MainApp {
     // FLOW 3: LOGIN ADMIN
     // ==========================================
     private static void loginAdminFlow() {
-        System.out.println("\n--- 🔐 LOGIN ADMIN ---");
+        System.out.println("\n--- LOGIN ADMIN ---");
         System.out.print("Masukkan Admin Code: ");
         String code = scanner.nextLine();
 
@@ -279,9 +271,9 @@ public class MainApp {
 
                         // Panggil service untuk tambah stok
                         productService.addStock(pid, stock);
-                        System.out.println("✅ Stok Berhasil Ditambahkan!");
+                        System.out.println("Stok Berhasil Ditambahkan!");
                     } catch (NumberFormatException e) {
-                        System.out.println("❌ Input angka aja bro!");
+                        System.out.println("Input angka aja bro!");
                     }
                 } else if (admMenu.equals("3")) {
                     handleViewAllUsers();
@@ -292,13 +284,13 @@ public class MainApp {
                 }
             }
         } else {
-            System.out.println("❌ Kode Admin Salah!");
+            System.out.println("Kode Admin Salah!");
         }
     }
 
     // Admin: Lihat Semua User
     private static void handleViewAllUsers() {
-        System.out.println("\n--- 👥 DAFTAR SELURUH NASABAH ---");
+        System.out.println("\n--- DAFTAR SELURUH NASABAH ---");
         List<Customer> customers = authService.getAllCustomers();
 
         if (customers.isEmpty()) {
@@ -307,8 +299,8 @@ public class MainApp {
             for (Customer c : customers) {
                 // Tampilkan ID, Nama, Username, dan Saldo
                 double balance = (c.getWallet() != null) ? c.getWallet().checkBalance() : 0.0;
-                System.out.printf("🆔 [%d] %s (@%s) - Saldo: Rp %,.0f\n",
-                        c.getId(), c.getFullName(), c.getUsername(), balance);
+                System.out.printf("Nama User: %s (ID: %d) - Username: %s - Saldo: Rp %,.0f\n",
+                        c.getFullName(), c.getId(), c.getUsername(), balance);
             }
         }
         System.out.println("---------------------------------");
@@ -316,23 +308,15 @@ public class MainApp {
 
     // Admin: Lihat Semua Transaksi
     private static void handleViewAllTransactions() {
-        System.out.println("\n--- 📊 LAPORAN SEMUA TRANSAKSI ---");
+        System.out.println("\n--- LAPORAN SEMUA TRANSAKSI ---");
         List<Transaction> transactions = walletService.getAllTransactions();
 
         if (transactions.isEmpty()) {
             System.out.println("Belum ada data transaksi.");
         } else {
             for (Transaction trx : transactions) {
-                String icon = "📄";
-                if (trx.getType() == Transaction.TransactionType.TOPUP)
-                    icon = "➕";
-                else if (trx.getType() == Transaction.TransactionType.TRANSFER)
-                    icon = "💸";
-                else if (trx.getType() == Transaction.TransactionType.PAYMENT)
-                    icon = "🛒";
-
-                System.out.printf("%s [trx_id:%d] Cust:%d - %s : Rp %,.0f\n",
-                        icon, trx.getTransactionId(), trx.getCustomerId(), trx.getType(), trx.getAmount());
+                System.out.printf("[trx_id:%d] Cust:%d - %s : Rp %,.0f\n",
+                        trx.getTransactionId(), trx.getCustomerId(), trx.getType(), trx.getAmount());
             }
         }
         System.out.println("----------------------------------");
@@ -359,7 +343,7 @@ public class MainApp {
         String pin = scanner.nextLine();
 
         if (pin.length() != 6) {
-            System.out.println("❌ Gagal: PIN harus 6 digit angka!");
+            System.out.println("Gagal: PIN harus 6 digit angka!");
             return;
         }
 
@@ -367,9 +351,9 @@ public class MainApp {
         boolean success = authService.registerCustomer(uname, pass, fname, phone, pin);
 
         if (success) {
-            System.out.println("✅ Akun berhasil dibuat! Silakan Login.");
+            System.out.println("Akun berhasil dibuat! Silakan Login.");
         } else {
-            System.out.println("❌ Registrasi Gagal! Username atau No HP sudah terdaftar.");
+            System.out.println("sRegistrasi Gagal! Username atau No HP sudah terdaftar.");
         }
     }
 }

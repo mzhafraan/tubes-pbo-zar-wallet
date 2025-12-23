@@ -8,7 +8,6 @@ public class Admin extends User {
 
     private String adminCode;
 
-    // Admin manages Lists (sesuai diagram)
     private List<User> userList;
     private List<Product> productList;
 
@@ -19,25 +18,23 @@ public class Admin extends User {
         this.productList = new ArrayList<>();
     }
 
-    // === IMPLEMENTASI ABSTRACT USER ===
     @Override
     public boolean login(String username, String password) {
-        // Login admin mungkin ngecek adminCode juga
+
         return this.username.equals(username) && this.password.equals(password);
     }
 
-    // === METHOD SESUAI DIAGRAM ===
     public void manageProducts() {
         System.out.println("Masuk ke menu management produk...");
     }
 
     public void addProduct(Product p) {
         this.productList.add(p);
-        // Logic insert ke DB
+
     }
 
     public void deleteProduct(int productId) {
-        // Logic delete dari list/DB
+
     }
 
     public void updateStock(Product p, int quantity) {

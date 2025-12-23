@@ -2,7 +2,7 @@ package models;
 
 public class Product {
     private int productId;
-    private String productName; // Di diagram tertulis "String productName"
+    private String productName;
     private int stock;
     private double price;
     private String category;
