@@ -20,7 +20,7 @@ public class AuthService {
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                // 1. Bikin Object Customer dari data DB
+                // buat object customer
                 Customer cust = new Customer(
                         rs.getInt("customer_id"),
                         rs.getString("username"),
@@ -29,8 +29,7 @@ public class AuthService {
                         rs.getString("phone_number"),
                         rs.getString("pin"));
 
-                // 2. AMBIL WALLET MILIK DIA (PENTING!)
-                // Kita harus 'attach' wallet ke customer ini biar saldonya kebaca
+                //attach wallet cust
                 Wallet userWallet = getWalletByCustomerId(cust.getId(), cust.getPin());
                 cust.setWallet(userWallet);
 
@@ -42,7 +41,7 @@ public class AuthService {
         return null;
     }
 
-    // === TAMBAHAN FITUR REGISTER ===
+    // register logic buat Customer
     public boolean registerCustomer(String username, String password, String fullName, String phone, String pin) {
         Connection conn = null;
         String sqlCust = "INSERT INTO customer (username, password, full_name, phone_number, pin) VALUES (?, ?, ?, ?, ?)";
@@ -50,7 +49,7 @@ public class AuthService {
 
         try {
             conn = DatabaseHelper.getConnection();
-            conn.setAutoCommit(false); // START TRANSACTION
+            conn.setAutoCommit(false); // cek manual commit
 
             // 1. Insert ke Tabel Customer
             int newCustomerId = -1;
@@ -65,7 +64,7 @@ public class AuthService {
                 if (affectedRows == 0)
                     throw new SQLException("Gagal membuat user.");
 
-                // Ambil ID Customer yang baru aja dibuat (Auto Increment)
+                // Ambil ID Customer yang baru aja dibuat untuk dipake bikin Wallet
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         newCustomerId = generatedKeys.getInt(1);

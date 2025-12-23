@@ -1,13 +1,13 @@
 package services;
 
 import infrastructure.DatabaseHelper;
+import java.sql.*;
 import models.Customer;
 import models.Product;
-import java.sql.*;
 
 public class WalletService {
 
-    // FITUR 1: TOP UP SALDO
+    // TOP UP SALDO
     public boolean topUp(Customer cust, double amount) {
         if (amount <= 0) {
             System.out.println("❌ Amount harus positif!");
@@ -45,12 +45,12 @@ public class WalletService {
         }
     }
 
-    // FITUR 2: TRANSFER SALDO (Antar User)
+    // TRANSFER SALDO (Antar User)
     public boolean transfer(Customer sender, int targetCustId, double amount) {
         Connection conn = null;
         try {
             conn = DatabaseHelper.getConnection();
-            conn.setAutoCommit(false); // MATIKAN AUTO SAVE
+            conn.setAutoCommit(false); // cek manual commit
 
             // 1. Cek Saldo Pengirim Cukup Gak?
             if (amount <= 0) {
@@ -116,12 +116,12 @@ public class WalletService {
         }
     }
 
-    // FITUR 3: BELI PRODUK (Pulsa/Token/Dll)
+    // BELI PRODUK (Pulsa/Token/Dll)
     public boolean buyProduct(Customer cust, Product product) {
         Connection conn = null;
         try {
             conn = DatabaseHelper.getConnection();
-            conn.setAutoCommit(false); // START TRANSACTION
+            conn.setAutoCommit(false); // cek manual commit
 
             // 1. Cek Saldo User
             if (cust.getWallet().checkBalance() < product.getPrice()) {
@@ -168,7 +168,7 @@ public class WalletService {
                 stmt.executeUpdate();
             }
 
-            conn.commit(); // Sukses! Simpan permanen
+            conn.commit(); // Simpan permanen
 
             // Update data di aplikasi
             cust.getWallet().processPayment(product.getPrice());
