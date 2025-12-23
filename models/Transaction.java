@@ -27,6 +27,10 @@ public class Transaction {
         this.timestamp = new Date(); // Set waktu sekarang
     }
 
+    public void setTimestamp(Date date) {
+        this.timestamp = date;
+    }
+
     // Setter khusus untuk melengkapi data
     public void setTargetCustomerId(int id) {
         this.targetCustomerId = id;

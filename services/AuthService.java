@@ -31,7 +31,7 @@ public class AuthService {
 
                 // 2. AMBIL WALLET MILIK DIA (PENTING!)
                 // Kita harus 'attach' wallet ke customer ini biar saldonya kebaca
-                Wallet userWallet = getWalletByCustomerId(cust.getId());
+                Wallet userWallet = getWalletByCustomerId(cust.getId(), cust.getPin());
                 cust.setWallet(userWallet);
 
                 return cust;
@@ -121,7 +121,7 @@ public class AuthService {
                         rs.getString("pin"));
 
                 // Attach Wallet biar admin bisa liat saldo user juga
-                Wallet w = getWalletByCustomerId(cust.getId());
+                Wallet w = getWalletByCustomerId(cust.getId(), cust.getPin());
                 cust.setWallet(w);
 
                 list.add(cust);
@@ -133,7 +133,7 @@ public class AuthService {
     }
 
     // Helper: Ambil data wallet berdasarkan ID Customer
-    private Wallet getWalletByCustomerId(int customerId) {
+    private Wallet getWalletByCustomerId(int customerId, String pin) {
         String sql = "SELECT * FROM wallet WHERE customer_id = ?";
         try (Connection conn = DatabaseHelper.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -145,7 +145,8 @@ public class AuthService {
                 return new Wallet(
                         rs.getInt("wallet_id"),
                         rs.getInt("customer_id"),
-                        rs.getDouble("balance"));
+                        rs.getDouble("balance"),
+                        pin);
             }
         } catch (Exception e) {
             e.printStackTrace();

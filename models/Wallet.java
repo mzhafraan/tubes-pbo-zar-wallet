@@ -11,14 +11,16 @@ public class Wallet implements IPaymentService {
     private int customerId;
     private double balance;
     private Date lastUpdate;
+    private String pin;
 
     // Relasi Aggregation (Wajik Kosong): Wallet punya List Transaction
     private List<Transaction> transactionHistory;
 
-    public Wallet(int walletId, int customerId, double balance) {
+    public Wallet(int walletId, int customerId, double balance, String pin) {
         this.walletId = walletId;
         this.customerId = customerId;
         this.balance = balance;
+        this.pin = pin;
         this.lastUpdate = new Date();
         this.transactionHistory = new ArrayList<>(); // Inisialisasi List
     }
@@ -34,9 +36,11 @@ public class Wallet implements IPaymentService {
     }
 
     @Override
-    public boolean validatePin(String pin) {
-        // Logic validasi PIN (biasanya ngecek ke object Customer)
-        return true;
+    public boolean validatePin(String inputPin) {
+        if (this.pin != null && this.pin.equals(inputPin)) {
+            return true; // PIN Cocok
+        }
+        return false;
     }
 
     // === METHOD SESUAI DIAGRAM ===

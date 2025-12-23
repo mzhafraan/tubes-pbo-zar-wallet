@@ -153,6 +153,11 @@ public class MainApp {
             System.out.print("Nominal Transfer: Rp ");
             double amount = Double.parseDouble(scanner.nextLine());
 
+            if (amount <= 0) {
+                System.out.println("❌ Nominal tidak valid (harus positif)!");
+                return;
+            }
+
             // Validasi PIN dulu
             System.out.print("Masukkan PIN Kamu: ");
             String pin = scanner.nextLine();
@@ -204,8 +209,16 @@ public class MainApp {
             }
 
             if (selectedProduct != null) {
-                // Proses pembelian via Service
-                walletService.buyProduct(cust, selectedProduct);
+                // SECURITY CHECK: Minta PIN
+                System.out.print("Masukkan PIN untuk Konfirmasi: ");
+                String pin = scanner.nextLine();
+
+                if (cust.getWallet().validatePin(pin)) {
+                    // Proses pembelian via Service
+                    walletService.buyProduct(cust, selectedProduct);
+                } else {
+                    System.out.println("❌ PIN Salah! Transaksi Dibatalkan.");
+                }
             } else {
                 System.out.println("❌ Produk tidak ditemukan.");
             }
@@ -220,6 +233,10 @@ public class MainApp {
         System.out.print("Mau Top Up berapa: Rp ");
         try {
             double amount = Double.parseDouble(scanner.nextLine());
+            if (amount <= 0) {
+                System.out.println("❌ Nominal harus positif!");
+                return;
+            }
             boolean success = walletService.topUp(cust, amount);
             if (success) {
                 System.out.println("✅ Top Up Berhasil! Saldo bertambah.");

@@ -9,6 +9,10 @@ public class WalletService {
 
     // FITUR 1: TOP UP SALDO
     public boolean topUp(Customer cust, double amount) {
+        if (amount <= 0) {
+            System.out.println("❌ Amount harus positif!");
+            return false;
+        }
         String sqlUpdate = "UPDATE wallet SET balance = balance + ? WHERE customer_id = ?";
         String sqlLog = "INSERT INTO transaction (customer_id, transaction_type, amount) VALUES (?, 'TOPUP', ?)";
 
@@ -49,6 +53,10 @@ public class WalletService {
             conn.setAutoCommit(false); // MATIKAN AUTO SAVE
 
             // 1. Cek Saldo Pengirim Cukup Gak?
+            if (amount <= 0) {
+                System.out.println("❌ Amount harus positif!");
+                return false;
+            }
             if (sender.getWallet().checkBalance() < amount) {
                 System.out.println("❌ Saldo tidak cukup!");
                 return false;
@@ -210,6 +218,7 @@ public class WalletService {
                 models.Transaction.TransactionType type = models.Transaction.TransactionType.valueOf(typeStr);
 
                 models.Transaction trx = new models.Transaction(id, custId, type, amount);
+                trx.setTimestamp(time); // Set waktu asli dari DB
                 // Set data tambahan manual karena constructor terbatas
                 // Note: Idealnya constructor Transaction diupdate, tapi ini cara cepat
 
@@ -242,6 +251,10 @@ public class WalletService {
 
                 models.Transaction.TransactionType type = models.Transaction.TransactionType.valueOf(typeStr);
                 models.Transaction trx = new models.Transaction(id, custId, type, amount);
+                try {
+                    trx.setTimestamp(rs.getTimestamp("timestamp"));
+                } catch (Exception e) {
+                }
 
                 // Set manual fields yang gak ada di constructor
                 // Asumsi Transaction punya method setTargetCustomerId
