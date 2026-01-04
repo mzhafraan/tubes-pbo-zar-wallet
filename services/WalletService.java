@@ -70,7 +70,7 @@ public class WalletService {
                 int row = stmt.executeUpdate();
 
                 if (row == 0) {
-                    System.out.println("❌ ID Penerima tidak ditemukan!");
+                    System.out.println("ID Penerima tidak ditemukan!");
                     throw new SQLException("User not found");
                 }
             }
@@ -182,7 +182,18 @@ public class WalletService {
 
     public java.util.List<models.Transaction> getTransactionHistory(int customerId) {
         java.util.List<models.Transaction> history = new java.util.ArrayList<>();
-        String sql = "SELECT * FROM transaction WHERE customer_id = ? OR target_customer_id = ? ORDER BY timestamp DESC";
+
+        // JOIN untuk ambil nama produk, nama tujuan, nama pengirim
+        String sql = "SELECT t.*, " +
+                "p.product_name, " +
+                "c_target.full_name as target_name, " +
+                "c_source.full_name as source_name " +
+                "FROM transaction t " +
+                "LEFT JOIN product p ON t.product_id = p.product_id " +
+                "LEFT JOIN customer c_target ON t.target_customer_id = c_target.customer_id " +
+                "LEFT JOIN customer c_source ON t.customer_id = c_source.customer_id " +
+                "WHERE t.customer_id = ? OR t.target_customer_id = ? " +
+                "ORDER BY t.timestamp DESC";
 
         try (Connection conn = DatabaseHelper.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -193,7 +204,7 @@ public class WalletService {
 
             while (rs.next()) {
                 int id = rs.getInt("transaction_id");
-                int custId = rs.getInt("customer_id");
+                int custId = rs.getInt("customer_id"); // Pengirim
                 String typeStr = rs.getString("transaction_type");
                 double amount = rs.getDouble("amount");
                 Timestamp time = rs.getTimestamp("timestamp");
@@ -202,6 +213,12 @@ public class WalletService {
 
                 models.Transaction trx = new models.Transaction(id, custId, type, amount);
                 trx.setTimestamp(time);
+
+                // Set detail info
+                trx.setTargetCustomerId(rs.getInt("target_customer_id"));
+                trx.setProductName(rs.getString("product_name"));
+                trx.setTargetUserName(rs.getString("target_name"));
+                trx.setSourceUserName(rs.getString("source_name"));
 
                 history.add(trx);
             }
@@ -214,9 +231,20 @@ public class WalletService {
 
     public java.util.List<models.Transaction> getAllTransactions() {
         java.util.List<models.Transaction> history = new java.util.ArrayList<>();
-        String sql = "SELECT * FROM transaction ORDER BY timestamp DESC";
+        // JOIN juga untuk admin view
+        String sql = "SELECT t.*, " +
+                "p.product_name, " +
+                "c_target.full_name as target_name, " +
+                "c_source.full_name as source_name " +
+                "FROM transaction t " +
+                "LEFT JOIN product p ON t.product_id = p.product_id " +
+                "LEFT JOIN customer c_target ON t.target_customer_id = c_target.customer_id " +
+                "LEFT JOIN customer c_source ON t.customer_id = c_source.customer_id " +
+                "ORDER BY t.timestamp DESC";
 
-        try (Connection conn = DatabaseHelper.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+        try (Connection conn = DatabaseHelper.getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
                 int id = rs.getInt("transaction_id");
@@ -232,6 +260,12 @@ public class WalletService {
                     trx.setTimestamp(rs.getTimestamp("timestamp"));
                 } catch (Exception e) {
                 }
+
+                // Set detail info
+                trx.setTargetCustomerId(targetId);
+                trx.setProductName(rs.getString("product_name"));
+                trx.setTargetUserName(rs.getString("target_name"));
+                trx.setSourceUserName(rs.getString("source_name"));
 
                 history.add(trx);
             }

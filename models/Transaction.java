@@ -72,6 +72,35 @@ public class Transaction {
         return customerId;
     }
 
+    // Transient fields for display
+    private String productName;
+    private String targetUserName;
+    private String sourceUserName; // Pengirim (untuk transfer masuk)
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public String getTargetUserName() {
+        return targetUserName;
+    }
+
+    public void setTargetUserName(String targetUserName) {
+        this.targetUserName = targetUserName;
+    }
+
+    public String getSourceUserName() {
+        return sourceUserName;
+    }
+
+    public void setSourceUserName(String sourceUserName) {
+        this.sourceUserName = sourceUserName;
+    }
+
     public Date getTimestamp() {
         return timestamp;
     }

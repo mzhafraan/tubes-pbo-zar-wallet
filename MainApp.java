@@ -128,9 +128,28 @@ public class MainApp {
             System.out.println("Belum ada transaksi.");
         } else {
             for (Transaction trx : history) {
-                // Langsung tampilkan Tipe dan Nominal tanpa icon
-                System.out.printf("[%s] - Rp %,.0f\n",
-                        trx.getType(), trx.getAmount());
+                String desc = "";
+                // Tentukan deskripsi berdasarkan tipe
+                switch (trx.getType()) {
+                    case TOPUP:
+                        desc = "Top Up Saldo";
+                        break;
+                    case PAYMENT:
+                        desc = "Beli " + trx.getProductName();
+                        break;
+                    case TRANSFER:
+                        if (trx.getCustomerId() == cust.getId()) {
+                            // Saya pengirim
+                            desc = "Transfer ke " + trx.getTargetUserName();
+                        } else {
+                            // Saya penerima
+                            desc = "Terima dari " + trx.getSourceUserName();
+                        }
+                        break;
+                }
+
+                System.out.printf("[%s] %s - Rp %,.0f\n",
+                        trx.getTimestamp(), desc, trx.getAmount());
             }
         }
         System.out.println("----------------------------");
@@ -248,7 +267,7 @@ public class MainApp {
         System.out.print("Masukkan Admin Code: ");
         String code = scanner.nextLine();
 
-        if (code.equals("ADM001")) {
+        if (authService.validateAdminCode(code)) {
             boolean isAdmin = true;
             while (isAdmin) {
                 System.out.println("\n--- 🛠 MENU ADMIN ---");
@@ -315,8 +334,17 @@ public class MainApp {
             System.out.println("Belum ada data transaksi.");
         } else {
             for (Transaction trx : transactions) {
-                System.out.printf("[trx_id:%d] Cust:%d - %s : Rp %,.0f\n",
-                        trx.getTransactionId(), trx.getCustomerId(), trx.getType(), trx.getAmount());
+                String detail = "";
+                if (trx.getType() == Transaction.TransactionType.PAYMENT) {
+                    detail = "Beli " + trx.getProductName();
+                } else if (trx.getType() == Transaction.TransactionType.TRANSFER) {
+                    detail = trx.getSourceUserName() + " -> " + trx.getTargetUserName();
+                } else {
+                    detail = "Top Up oleh " + trx.getSourceUserName();
+                }
+
+                System.out.printf("[ID:%d] %s (%s) : Rp %,.0f\n",
+                        trx.getTransactionId(), trx.getType(), detail, trx.getAmount());
             }
         }
         System.out.println("----------------------------------");

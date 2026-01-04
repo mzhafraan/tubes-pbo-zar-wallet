@@ -29,7 +29,7 @@ public class AuthService {
                         rs.getString("phone_number"),
                         rs.getString("pin"));
 
-                //attach wallet cust
+                // attach wallet cust
                 Wallet userWallet = getWalletByCustomerId(cust.getId(), cust.getPin());
                 cust.setWallet(userWallet);
 
@@ -151,5 +151,24 @@ public class AuthService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    // === LOGIN ADMIN ===
+    public boolean validateAdminCode(String code) {
+        String sql = "SELECT admin_id FROM admin WHERE admin_code = ?";
+        try (Connection conn = DatabaseHelper.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, code);
+            ResultSet rs = stmt.executeQuery();
+
+            // Kalau ada datanya, berarti kodenya bener
+            if (rs.next()) {
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
