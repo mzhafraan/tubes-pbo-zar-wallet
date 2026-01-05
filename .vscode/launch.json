@@ -6,6 +6,13 @@
         "name": "MainApp",
         "request": "launch",
         "mainClass": "MainApp",
+        "projectName": "tubes-pbo-zar-wallet_5213d97d"
+    },
+    {
+        "type": "java",
+        "name": "MainApp",
+        "request": "launch",
+        "mainClass": "MainApp",
         "projectName": "tubes-pbo-zar-wallet_6518dc12"
     },
     {

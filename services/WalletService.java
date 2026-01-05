@@ -188,7 +188,7 @@ public class WalletService {
                 "p.product_name, " +
                 "c_target.full_name as target_name, " +
                 "c_source.full_name as source_name " +
-                "FROM transaction t " +
+                "FROM `transaction` t " +
                 "LEFT JOIN product p ON t.product_id = p.product_id " +
                 "LEFT JOIN customer c_target ON t.target_customer_id = c_target.customer_id " +
                 "LEFT JOIN customer c_source ON t.customer_id = c_source.customer_id " +
