@@ -275,7 +275,8 @@ public class MainApp {
                 System.out.println("2. Restock Produk (Tambah Stok)");
                 System.out.println("3. Lihat Semua User (Nasabah)");
                 System.out.println("4. Lihat Laporan Transaksi");
-                System.out.println("5. Kembali ke Menu Utama");
+                System.out.println("5. Tambah Produk Baru");
+                System.out.println("6. Kembali ke Menu Utama");
                 System.out.print(">> Pilih: ");
                 String admMenu = scanner.nextLine();
 
@@ -299,6 +300,8 @@ public class MainApp {
                 } else if (admMenu.equals("4")) {
                     handleViewAllTransactions();
                 } else if (admMenu.equals("5")) {
+                    handleAddProduct();
+                } else if (admMenu.equals("6")) {
                     isAdmin = false;
                 }
             }
@@ -348,6 +351,40 @@ public class MainApp {
             }
         }
         System.out.println("----------------------------------");
+    }
+
+    private static void handleAddProduct() {
+        System.out.println("\n--- ➕ TAMBAH PRODUK BARU ---");
+        System.out.print("Nama Produk: ");
+        String name = scanner.nextLine();
+
+        System.out.print("Stok Awal: ");
+        int stock = 0;
+        try {
+            stock = Integer.parseInt(scanner.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Stok harus angka!");
+            return;
+        }
+
+        System.out.print("Harga: Rp ");
+        double price = 0;
+        try {
+            price = Double.parseDouble(scanner.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Harga harus angka!");
+            return;
+        }
+
+        System.out.print("Kategori (Pulsa/Data/Token): ");
+        String category = scanner.nextLine();
+
+        boolean success = productService.addProduct(name, stock, price, category);
+        if (success) {
+            System.out.println("✅ Produk Berhasil Ditambahkan!");
+        } else {
+            System.out.println("❌ Gagal Menambahkan Produk.");
+        }
     }
 
     // ==========================================
