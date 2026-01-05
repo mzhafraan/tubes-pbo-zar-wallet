@@ -41,6 +41,11 @@ public class WalletService {
         }
     }
 
+    public boolean topUp(Customer cust, double amount, String provider) {
+        System.out.println("\n[Sistem] Memproses Top Up via " + provider + "...");
+        return topUp(cust, amount);
+    }
+
     public boolean transfer(Customer sender, int targetCustId, double amount) {
         Connection conn = null;
         try {

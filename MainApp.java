@@ -248,7 +248,24 @@ public class MainApp {
                 System.out.println("Nominal harus positif!");
                 return;
             }
-            boolean success = walletService.topUp(cust, amount);
+
+            System.out.println("Pilih Metode Pembayaran:");
+            System.out.println("1. Direct Transfer (Admin)");
+            System.out.println("2. Transfer Bank (VA)");
+            System.out.println("3. Minimarket (Indomaret/Alfamart)");
+            System.out.print(">> Pilih: ");
+            String metode = scanner.nextLine();
+
+            boolean success = false;
+            if (metode.equals("2")) {
+                success = walletService.topUp(cust, amount, "Virtual Account Bank");
+            } else if (metode.equals("3")) {
+                success = walletService.topUp(cust, amount, "Indomaret / Alfamart");
+            } else {
+                // Default method (tanpa overload)
+                success = walletService.topUp(cust, amount);
+            }
+
             if (success) {
                 System.out.println("Top Up Berhasil! Saldo bertambah.");
             } else {
