@@ -376,7 +376,7 @@ public class MainApp {
             return;
         }
 
-        System.out.print("Kategori (Pulsa/Data/Token): ");
+        System.out.print("Kategori: ");
         String category = scanner.nextLine();
 
         boolean success = productService.addProduct(name, stock, price, category);
